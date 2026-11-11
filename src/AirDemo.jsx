@@ -1,5 +1,6 @@
 // Vercel 프론트(React)에 넣는 화면 — 결과만 백엔드(FastAPI)에 물어본다
 import { useEffect, useState } from "react";
+import TrendChart from "./TrendChart";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -18,6 +19,7 @@ export default function AirDemo() {
   const [summary, setSummary] = useState(null);
   const [rows, setRows] = useState([]);
   const [pred, setPred] = useState(null);
+  const [trend, setTrend] = useState([]);
   const [error, setError] = useState("");
 
   async function load() {
@@ -35,8 +37,20 @@ export default function AirDemo() {
 
   async function predict(station) {
     try {
-      const r = await fetch(`${API}/air/predict?station=${encodeURIComponent(station)}`);
-      setPred(await r.json());
+      const q = encodeURIComponent(station);
+      const [p, h] = await Promise.all([
+        fetch(`${API}/air/predict?station=${q}`).then((r) => r.json()),
+        // 아직 /air/history 가 없는 옛 백엔드면 실패해도 예측은 보여 준다
+        fetch(`${API}/air/history?station=${q}&hours=48`)
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null),
+      ]);
+      let points = h?.points ?? [];
+      if (points.length < 2 && p.recent) {
+        points = p.recent.map((v, i) => ({ time: `${p.recent.length - 1 - i}시간 전`, pm10: v }));
+      }
+      setPred(p);
+      setTrend(points);
     } catch (e) {
       setError(String(e));
     }
@@ -81,6 +95,9 @@ export default function AirDemo() {
             ? <>1시간 뒤 PM10 약 <b>{pred.next_pm10}</b> <Badge grade={pred.next_grade} /> (평균 오차 ±{pred.avg_error})</>
             : pred.message}
         </p>
+      )}
+      {pred && (
+        <TrendChart points={trend} next={pred.ready ? pred.next_pm10 : null} />
       )}
     </div>
   );
