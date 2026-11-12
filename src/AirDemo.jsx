@@ -1,6 +1,7 @@
 // Vercel 프론트(React)에 넣는 화면 — 결과만 백엔드(FastAPI)에 물어본다
 import { useEffect, useState } from "react";
 import TrendChart from "./TrendChart";
+import MapView from "./MapView";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -59,7 +60,7 @@ export default function AirDemo() {
   useEffect(() => { load(); }, []);
 
   return (
-    <div style={{ padding: 20, maxWidth: 560 }}>
+    <div style={{ padding: 20, maxWidth: 720 }}>
       <h3>제주 미세먼지 (공공데이터 → FastAPI 가공 → Supabase)</h3>
       {error && <p style={{ color: "red" }}>{error}</p>}
 
@@ -70,6 +71,8 @@ export default function AirDemo() {
           {summary.mode === "demo" && <small> (연습 데이터)</small>}
         </p>
       )}
+
+      <MapView rows={rows} />
 
       <table border="1" cellPadding="6" style={{ borderCollapse: "collapse", width: "100%" }}>
         <thead>
